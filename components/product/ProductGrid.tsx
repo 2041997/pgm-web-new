@@ -29,7 +29,7 @@ export default function ProductGrid({
       loadProducts()
     }
   }, [currentFilters, sortBy])
-
+ console.log("first", products)
   const loadProducts = async () => {
     setLoading(true)
     try {
@@ -38,6 +38,7 @@ export default function ProductGrid({
         sortBy,
         limit: 12
       })
+      console.log("first", response)
       
       if (response.success) {
         setProducts(response.data)

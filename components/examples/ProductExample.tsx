@@ -1,4 +1,4 @@
-// Example usage of mock APIs in a React component
+// Example usage of real APIs in a React component
 
 'use client'
 
@@ -26,8 +26,8 @@ export default function ProductExample() {
         setProducts(productsResponse.data)
       }
 
-      // Get current cart
-      const cartResponse = await cartApi.getCart()
+      // Get current cart (with default user ID)
+      const cartResponse = await cartApi.getCart(1)
       if (cartResponse.success) {
         setCart(cartResponse.data)
       }
@@ -40,17 +40,18 @@ export default function ProductExample() {
 
   const addToCart = async (product: Product) => {
     try {
-      const cartItem = {
+      const cartItem: CartItem = {
         productId: product.id,
         price: product.price,
         title: product.title,
-        image: product.images[0],
+        image: product.images[0] || '/placeholder-image.jpg',
         quantity: 1
       }
 
       const response = await cartApi.addToCart(cartItem)
       if (response.success) {
-        setCart(response.data)
+        // Reload cart to get updated data
+        loadData()
         alert('Product added to cart!')
       }
     } catch (error) {
@@ -121,13 +122,14 @@ export default function ProductExample() {
         ))}
       </div>
 
-      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">API Integration Info</h2>
-        <div className="space-y-2 text-sm">
-          <p><strong>Mock API Status:</strong> Active</p>
-          <p><strong>Data Source:</strong> Local JSON files</p>
-          <p><strong>Cart Storage:</strong> localStorage</p>
-          <p><strong>Backend Integration:</strong> Ready for real API swap</p>
+      <div className="mt-8 p-4 bg-green-50 rounded-lg border border-green-200">
+        <h2 className="text-xl font-semibold mb-4 text-green-800">Real API Integration</h2>
+        <div className="space-y-2 text-sm text-green-700">
+          <p><strong>✅ Real API Status:</strong> Active</p>
+          <p><strong>✅ Data Source:</strong> PGM Business APIs</p>
+          <p><strong>✅ Product API:</strong> https://product.pgmbusiness.com</p>
+          <p><strong>✅ User API:</strong> https://user.pgmbusiness.com</p>
+          <p><strong>✅ Backend Integration:</strong> Fully connected</p>
         </div>
       </div>
     </div>

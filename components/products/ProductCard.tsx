@@ -32,6 +32,7 @@ export default function ProductCard({
     try {
       const cartItem = {
         productId: product.id,
+        quantity: 1,
         price: product.price,
         title: product.title,
         image: product.images[0] || '/placeholder-image.jpg'
