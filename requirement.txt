@@ -1,0 +1,53 @@
+Create a complete Next.js  project with TypeScript and TailwindCSS using the following setup.
+Initialize with ESLint enabled, TailwindCSS configured, PostCSS setup, TypeScript strict mode enabled, and support for .env and .env.development files.
+Use this folder structure:
+
+app/                # (if using Next.js  App Router)
+components/         # Shared UI components
+config/             # App-level configuration files
+context/            # React Context providers
+data/               # Static or mock data
+hooks/              # Custom React hooks
+lib/                # Utility libraries / helpers
+pages/              # Next.js Pages Router (if still needed)
+public/             # Static assets (images, icons, etc.)
+services/           # API calls and external services
+store/              # State management (Redux, Zustand, etc.)
+styles/             # Global and module CSS
+types/              # TypeScript type definitions
+utils/              # General utility functions
+
+
+Generate the following config files with boilerplate content:
+
+.env and .env.development
+
+.gitignore
+
+ecosystem.config.js
+
+next.config.js
+
+postcss.config.js
+
+tailwind.config.ts
+
+tsconfig.json
+
+tsconfig.tsbuildinfo
+
+package.json
+
+Add these shell scripts in the root folder:
+
+deploy.sh
+
+dev-clean.sh
+
+restart-dev.sh
+
+Create documentation files:
+
+README.md (overview, run, build, deploy)
+
+developer-guide.md (coding conventions, folder purpose, commit guidelines)
