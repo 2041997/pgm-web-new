@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -11,24 +10,64 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
 export default function OrderConfirmationPage() {
   const params = useParams()
-  const orderId = params?.id as string
+  const orderIdStr = params?.id as string | undefined
 
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (orderId) {
+    if (orderIdStr) {
       loadOrder()
     }
-  }, [orderId])
+  }, [orderIdStr])
 
   const loadOrder = async () => {
     try {
       setLoading(true)
-      const response = await orderApi.getOrder(orderId)
+      const idNum = Number(orderIdStr)
+      if (Number.isNaN(idNum)) throw new Error('Invalid order id')
+      const response = await orderApi.getOrder(idNum)
       
       if (response.success) {
-        setOrder(response.data)
+        // response.data is API Order shape; map to ecommerce Order expected by this component
+        const apiOrder = response.data as any
+        if (apiOrder) {
+          const items = (apiOrder.orderItems || []).map((oi: any) => ({
+            productId: String(oi.productId),
+            quantity: oi.quantity,
+            price: oi.price,
+            title: oi.product?.name ?? '',
+            image: oi.product?.image?.[0] ?? '',
+            selectedVariants: {},
+          }))
+
+          const ecommerceOrder: Order = {
+            id: String(apiOrder.id),
+            userId: String(apiOrder.userId),
+            items,
+            subtotal: items.reduce((s: number, it: any) => s + (it.price * it.quantity), 0),
+            tax: 0,
+            shipping: 0,
+            discount: 0,
+            total: apiOrder.totalAmount ?? 0,
+            status: 'confirmed',
+            shippingAddress: {
+              id: '', userId: String(apiOrder.userId), type: 'home', fullName: apiOrder.shippingAddress?.street ?? '', phone: '',
+              addressLine1: apiOrder.shippingAddress?.street ?? '', addressLine2: '', city: apiOrder.shippingAddress?.city ?? '', state: apiOrder.shippingAddress?.state ?? '', postalCode: apiOrder.shippingAddress?.zipCode ?? '', country: apiOrder.shippingAddress?.country ?? '', isDefault: true
+            },
+            billingAddress: {
+              id: '', userId: String(apiOrder.userId), type: 'home', fullName: apiOrder.billingAddress?.street ?? '', phone: '',
+              addressLine1: apiOrder.billingAddress?.street ?? '', addressLine2: '', city: apiOrder.billingAddress?.city ?? '', state: apiOrder.billingAddress?.state ?? '', postalCode: apiOrder.billingAddress?.zipCode ?? '', country: apiOrder.billingAddress?.country ?? '', isDefault: true
+            },
+            paymentMethod: apiOrder.paymentMethod ?? '',
+            createdAt: apiOrder.createdAt ?? '',
+            updatedAt: apiOrder.updatedAt ?? '',
+          }
+
+          setOrder(ecommerceOrder)
+        } else {
+          setOrder(null)
+        }
       }
     } catch (error) {
       console.error('Error loading order:', error)

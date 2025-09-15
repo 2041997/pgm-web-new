@@ -51,14 +51,12 @@ export default function CartPage() {
 
     setUpdating(productId)
     try {
-      const response = await cartApi.updateCartItem(productId, newQuantity, selectedVariants)
+    const idNum = Number(productId)
+    if (Number.isNaN(idNum)) throw new Error('Invalid product id')
+    const response = await cartApi.updateCartItem(idNum, newQuantity, selectedVariants)
       if (response.success) {
-        setCartItems(response.data)
-        // Reload summary
-        const summaryResponse = await cartApi.getCartSummary()
-        if (summaryResponse.success) {
-          setCartSummary(summaryResponse.data)
-        }
+        // refresh full cart to keep types consistent
+        await loadCart()
       }
     } catch (error) {
       console.error('Error updating quantity:', error)
@@ -70,9 +68,11 @@ export default function CartPage() {
   const removeItem = async (productId: string, selectedVariants?: { [key: string]: string }) => {
     setUpdating(productId)
     try {
-      const response = await cartApi.removeFromCart(productId, selectedVariants)
+      const idNum = Number(productId)
+      if (Number.isNaN(idNum)) throw new Error('Invalid product id')
+      const response = await cartApi.removeFromCart(idNum, selectedVariants)
       if (response.success) {
-        setCartItems(response.data)
+        setCartItems(response.data ?? [])
         // Reload summary
         const summaryResponse = await cartApi.getCartSummary()
         if (summaryResponse.success) {

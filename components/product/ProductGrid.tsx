@@ -1,6 +1,6 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Product, ProductFilters } from '@/types/ecommerce'
 import { productApi } from '@/services'
 import ProductCard from './ProductCard'
@@ -19,6 +19,7 @@ export default function ProductGrid({
   title = "Products",
   showFilters = true 
 }: ProductGridProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [products, setProducts] = useState<Product[]>(initialProducts || [])
   const [loading, setLoading] = useState(!initialProducts)
   const [currentFilters, setCurrentFilters] = useState<ProductFilters>(filters)
@@ -29,7 +30,6 @@ export default function ProductGrid({
       loadProducts()
     }
   }, [currentFilters, sortBy])
- console.log("first", products)
   const loadProducts = async () => {
     setLoading(true)
     try {
@@ -61,6 +61,42 @@ export default function ProductGrid({
     }))
   }
 
+  // Local helper: compute displayedProducts when initialProducts supplied (client-side filter)
+  const displayedProducts = React.useMemo(() => {
+    if (!initialProducts) return products
+    if (selectedCategory === 'All') return initialProducts
+    return initialProducts.filter((p: Product) => String(p.category || '').toLowerCase() === selectedCategory.toLowerCase())
+  }, [initialProducts, products, selectedCategory])
+
+  // Inline CategoryNav component to avoid extra files
+  const staticCategories: string[] = [
+    'All',
+    'Milks & Dairies',
+    'Coffes & Teas',
+    'Pet Foods',
+    'Meats',
+    'Vegetables',
+    'Fruits'
+  ]
+
+  const CategoryNav = ({ products, onSelectCategory, selected }: { products?: Product[]; onSelectCategory: (cat: string) => void; selected: string }) => {
+    // Use the static list from design, fall back to detected categories only if needed
+    const cats = staticCategories
+
+    return (
+      <nav className="flex items-center overflow-hidden overflow-auto gap-6 text-md text-slate-700">
+        {cats.map((c: string) => (
+          <button
+            key={c}
+            onClick={() => onSelectCategory(c)}
+            className={`transition-colors ${selected === c ? 'text-emerald-600' : 'hover:text-emerald-600'}`}>
+            {c}
+          </button>
+        ))}
+      </nav>
+    )
+  }
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -71,130 +107,33 @@ export default function ProductGrid({
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{title}</h1>
-          <p className="text-gray-600">
-            Showing {products.length} products
-          </p>
-        </div>
 
-        {/* Sort Options */}
-        <div className="mt-4 md:mt-0">
-          <label htmlFor="sort" className="block text-sm font-medium text-gray-700 mb-2">
-            Sort by:
-          </label>
-          <select
-            id="sort"
-            value={sortBy}
-            onChange={(e) => handleSortChange(e.target.value as ProductFilters['sortBy'])}
-            className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
-          >
-            <option value="popularity">Popularity</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="rating">Customer Rating</option>
-            <option value="newest">Newest First</option>
-          </select>
-        </div>
-      </div>
+      {/* Header: title left, category nav right */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <h2 className="text-3xl md:text-4xl font-bold text-slate-800">Popular Products</h2>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4">Filters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {/* Price Range Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price Range
-              </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onChange={(e) => handleFilterChange({
-                    priceRange: {
-                      min: Number(e.target.value) || 0,
-                      max: currentFilters.priceRange?.max || 10000
-                    }
-                  })}
-                />
-                <span>-</span>
-                <input
-                  type="number"
-                  placeholder="Max"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onChange={(e) => handleFilterChange({
-                    priceRange: {
-                      min: currentFilters.priceRange?.min || 0,
-                      max: Number(e.target.value) || 10000
-                    }
-                  })}
-                />
-              </div>
-            </div>
-
-            {/* Category Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => handleFilterChange({
-                  categories: e.target.value ? [e.target.value] : undefined
-                })}
-              >
-                <option value="">All Categories</option>
-                <option value="smartphones">Smartphones</option>
-                <option value="laptops">Laptops</option>
-                <option value="shoes">Shoes</option>
-                <option value="accessories">Accessories</option>
-              </select>
-            </div>
-
-            {/* Brand Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Brand
-              </label>
-              <select
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => handleFilterChange({
-                  brands: e.target.value ? [e.target.value] : undefined
-                })}
-              >
-                <option value="">All Brands</option>
-                <option value="Apple">Apple</option>
-                <option value="Samsung">Samsung</option>
-                <option value="Nike">Nike</option>
-                <option value="AudioTech">AudioTech</option>
-              </select>
-            </div>
-
-            {/* In Stock Filter */}
-            <div>
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                  onChange={(e) => handleFilterChange({
-                    inStock: e.target.checked ? true : undefined
-                  })}
-                />
-                <span className="ml-2 text-sm text-gray-700">In Stock Only</span>
-              </label>
-            </div>
+        {/* Category nav */}
+        {showFilters && (
+          <div className="mt-4 md:mt-0">
+            <CategoryNav
+              products={initialProducts || products}
+              onSelectCategory={(cat) => {
+                // If we have server-backed loading, set filters to request server data
+                if (!initialProducts) {
+                  handleFilterChange({ ...( { category: cat === 'All' ? undefined : cat } as any ) })
+                }
+                // For client-side lists, we'll manage selection inside the component (see displayedProducts)
+                setSelectedCategory(cat)
+              }}
+              selected={selectedCategory}
+            />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Products Grid */}
       {products.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {products.map((product) => (
             <ProductCard 
               key={product.id} 

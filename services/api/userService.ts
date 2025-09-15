@@ -88,8 +88,8 @@ export class UserService {
   /**
    * Login user
    */
-  static async login(email: string, password: string): Promise<ApiResponse<TokenResponse>> {
-    const loginData = { email, password };
+  static async login(usernameOrEmail: string, password: string): Promise<ApiResponse<TokenResponse>> {
+    const loginData = { usernameOrEmail, password };
     const response = await userClient.post<TokenResponse>('/auth/login', loginData);
     
     if (response.success && response.data) {
@@ -187,6 +187,35 @@ export class UserService {
   static async resendVerificationEmail(email: string): Promise<ApiResponse<void>> {
     return userClient.post<void>('/auth/resend-verification', { email });
   }
+
+  
+  /**
+   * Verify OTP (used for registration/phone/email verification)
+   */
+  static async verifyOtp(payload: { destination: string; otp: string; type?: string }): Promise<ApiResponse<TokenResponse | any>> {
+    const response = await userClient.post<TokenResponse | any>('/auth/verify-otp', payload, {
+      headers: { accept: 'application/json', 'Content-Type': 'application/json' },
+    });
+
+    // If backend returns tokens on successful verify, persist them
+    if (response && response.success && response.data && (response.data.accessToken || response.data.refreshToken)) {
+      // Try to set tokens if shape matches TokenResponse
+      const accessToken = (response.data as TokenResponse).accessToken;
+      const refreshToken = (response.data as TokenResponse).refreshToken;
+      if (accessToken || refreshToken) tokenManager.setTokens(accessToken, refreshToken);
+    }
+
+    return response;
+  }
+
+  /**
+   * Send OTP to destination (email or phone)
+   */
+  static async sendOtp(destination: string): Promise<ApiResponse<any>> {
+    return userClient.post<any>('/auth/send-otp', { destination }, {
+      headers: { accept: 'application/json', 'Content-Type': 'application/json' },
+    });
+  }
 }
 
 // Export individual functions for backward compatibility
@@ -207,3 +236,5 @@ export const forgotPassword = UserService.forgotPassword;
 export const resetPassword = UserService.resetPassword;
 export const verifyEmail = UserService.verifyEmail;
 export const resendVerificationEmail = UserService.resendVerificationEmail;
+export const verifyOtp = UserService.verifyOtp;
+export const sendOtp = UserService.sendOtp;

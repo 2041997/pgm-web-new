@@ -91,18 +91,21 @@ export default function CheckoutPage() {
 
       if (profileResponse.success && profileResponse.data) {
         const profile = profileResponse.data
-        const defaultAddress = profile.addresses?.find(addr => addr.isDefault) || profile.addresses?.[0]
-        
+        // defensive: some API shapes may not include `addresses` on the profile
+        const possibleAddresses = (profile as any)?.addresses ?? (profile as any)?.addressList ?? null
+        const addresses = Array.isArray(possibleAddresses) ? possibleAddresses : null
+        const defaultAddress = addresses ? (addresses.find((addr: any) => addr.isDefault) || addresses[0]) : undefined
+
         setShippingAddress(prev => ({
           ...prev,
           firstName: profile.firstName || '',
           lastName: profile.lastName || '',
           email: profile.email || '',
           phone: defaultAddress?.phone || profile.phone || '',
-          address: defaultAddress?.addressLine1 || '',
+          address: defaultAddress?.addressLine1 || defaultAddress?.address || '',
           city: defaultAddress?.city || '',
           state: defaultAddress?.state || '',
-          zipCode: defaultAddress?.postalCode || '',
+          zipCode: defaultAddress?.postalCode || defaultAddress?.zipCode || '',
           country: defaultAddress?.country || 'US'
         }))
       }
@@ -179,9 +182,14 @@ export default function CheckoutPage() {
       if (response.success) {
         // Clear cart
         await cartApi.clearCart()
-        
-        // Redirect to order confirmation
-        router.push(`/orders/${response.data.id}`)
+
+        // Redirect to order confirmation (guard data)
+        const orderId = response.data?.id
+        if (orderId) {
+          router.push(`/orders/${orderId}`)
+        } else {
+          setErrors({ submit: 'Order created but no id returned.' })
+        }
       } else {
         setErrors({ submit: 'Failed to place order. Please try again.' })
       }

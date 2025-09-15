@@ -98,11 +98,11 @@ export default function ProductCard({
 
   return (
     <Link href={`/products/${product.id}`}>
-      <div className="group bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+  <div className="group bg-white rounded-lg border drop-shadow-lg hover:border-green-600 shadow-sm hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full">
         {/* Product Image */}
         <div className="relative aspect-square overflow-hidden">
           <Image
-            src={product.images[0] || '/placeholder-image.jpg'}
+            src={`https://product.pgmbusiness.com/uploads/products/${product.images[0] || '/placeholder-image.jpg'}`}
             alt={product.title}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -164,7 +164,7 @@ export default function ProductCard({
         </div>
 
         {/* Product Info */}
-        <div className="p-4">
+        <div className="p-4 flex flex-col flex-1">
           {/* Brand */}
           <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
             {product.brand}
@@ -185,52 +185,55 @@ export default function ProductCard({
             </span>
           </div>
 
-          {/* Price */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="text-lg font-bold text-gray-900">
-                ${product.price}
-              </span>
-              {product.originalPrice && (
-                <span className="text-sm text-gray-500 line-through">
-                  ${product.originalPrice}
+          {/* Footer: price, stock and tags - stick to bottom so all cards match height */}
+          <div className="mt-auto">
+            {/* Price */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-lg font-bold text-gray-900">
+                  ${product.price}
                 </span>
-              )}
+                {product.originalPrice && (
+                  <span className="text-sm text-gray-500 line-through">
+                    ${product.originalPrice}
+                  </span>
+                )}
+              </div>
+              
+              {/* Stock indicator */}
+              <div className="text-xs">
+                {product.inStock ? (
+                  <span className="text-green-600">
+                    {product.stockCount > 0 && product.stockCount <= 10 
+                      ? `Only ${product.stockCount} left`
+                      : 'In Stock'
+                    }
+                  </span>
+                ) : (
+                  <span className="text-red-600">Out of Stock</span>
+                )}
+              </div>
             </div>
-            
-            {/* Stock indicator */}
-            <div className="text-xs">
-              {product.inStock ? (
-                <span className="text-green-600">
-                  {product.stockCount > 0 && product.stockCount <= 10 
-                    ? `Only ${product.stockCount} left`
-                    : 'In Stock'
-                  }
-                </span>
-              ) : (
-                <span className="text-red-600">Out of Stock</span>
-              )}
-            </div>
-          </div>
 
-          {/* Tags */}
-          {product.tags && product.tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {product.tags.slice(0, 2).map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
-                >
-                  {tag}
-                </span>
-              ))}
-              {product.tags.length > 2 && (
-                <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
-                  +{product.tags.length - 2} more
-                </span>
-              )}
-            </div>
-          )}
+            {/* Tags */}
+            {product.tags && product.tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {product.tags.slice(0, 2).map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {product.tags.length > 2 && (
+                  <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                    +{product.tags.length - 2} more
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Link>

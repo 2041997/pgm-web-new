@@ -6,6 +6,7 @@ import { ApiResponse, ProductData, UpdateCartItemRequest, NestedApiResponse, Car
 
 // Helper function to convert ProductData to Product
 const convertProductDataToProduct = (item: ProductData): Product => {
+    console.log("Ssssssssssssss", item)
   return {
     id: item.id.toString(),
     title: item.name,
@@ -14,7 +15,7 @@ const convertProductDataToProduct = (item: ProductData): Product => {
     originalPrice: item.price,
     rating: 0,
     reviewCount: 0,
-    images: item.images || [],
+    images: item.image || [],
     category: 'General',
     brand: '',
     inStock: true,
@@ -34,7 +35,7 @@ const convertApiCartItemToEcommerce = (item: ApiCartItem): EcommerceCartItem => 
     quantity: item.quantity,
     price: item.price,
     title: item.product?.name || 'Product',
-    image: item.product?.images?.[0] || '/placeholder-image.jpg',
+    image: item.product?.image?.[0] || '/placeholder-image.jpg',
     selectedVariants: {}
   };
 };
@@ -181,7 +182,7 @@ export const cartApi = {
     }
   },
 
-  async updateCartItem(id: number, quantity: number, variants?: any) {
+  async updateCartItem(id: any, quantity: number, variants?: any) {
     try {
       const updateRequest: UpdateCartItemRequest = { 
         id: id,
@@ -241,7 +242,7 @@ export const orderApi = {
     }
   },
 
-  async getOrder(id: number) {
+  async getOrder(id: any) {
     try {
       const response = await OrderService.getOrderById(id);
       return response;

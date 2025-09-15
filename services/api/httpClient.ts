@@ -21,14 +21,27 @@ class TokenManager {
     
     // Store in localStorage for persistence
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+        // write both the newer keys and the older 'token' key for compatibility
+        try {
+          if (accessToken) {
+            localStorage.setItem('accessToken', accessToken)
+            localStorage.setItem('token', accessToken)
+          }
+          if (refreshToken) {
+            localStorage.setItem('refreshToken', refreshToken)
+          }
+        } catch (e) {
+          // ignore storage errors
+        }
     }
   }
 
   getAccessToken(): string | null {
     if (!this.accessToken && typeof window !== 'undefined') {
-      this.accessToken = localStorage.getItem('accessToken');
+  // read either the new 'accessToken' key or the legacy 'token' key
+  const a = localStorage.getItem('accessToken')
+  const t = localStorage.getItem('token')
+  this.accessToken = (a && a.trim()) ? a : ((t && t.trim()) ? t : null)
     }
     return this.accessToken;
   }
@@ -45,8 +58,13 @@ class TokenManager {
     this.refreshToken = null;
     
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+        try {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+        } catch (e) {
+          // ignore
+        }
     }
   }
 }
@@ -103,11 +121,18 @@ class HttpClient {
                 return this.axiosInstance(originalRequest);
               }
             }
-          } catch (refreshError) {
+            } catch (refreshError) {
             this.tokenManager.clearTokens();
-            // Redirect to login page
+            // Avoid forcing a full page reload. Update history and emit an event
+            // so consuming UI can perform a client-side redirect without reload.
             if (typeof window !== 'undefined') {
-              window.location.href = '/login';
+              try {
+                window.history.replaceState(null, '', '/account/login');
+                window.dispatchEvent(new CustomEvent('auth:logged-out'));
+              } catch (e) {
+                // Fallback to full reload if history API isn't available
+                window.location.href = '/account/login';
+              }
             }
           }
         }

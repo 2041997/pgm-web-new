@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-bold mb-4">ShopEasy</h3>
+            <h3 className="text-xl font-bold mb-4">PGM</h3>
             <p className="text-gray-300 mb-4">
               Your one-stop destination for quality products at amazing prices. 
               We're committed to providing excellent customer service and fast delivery.
@@ -91,7 +91,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
+                <Link href="/contact-us" className="text-gray-300 hover:text-white transition-colors">
                   Contact Us
                 </Link>
               </li>
@@ -125,7 +125,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6">
               <p className="text-gray-300">
-                © 2024 ShopEasy. All rights reserved.
+                © 2025 PGM business pvt ltd. All rights reserved.
               </p>
               <div className="flex space-x-4">
                 <Link href="/privacy" className="text-gray-300 hover:text-white transition-colors text-sm">

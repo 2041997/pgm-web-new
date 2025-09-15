@@ -44,7 +44,7 @@ export interface ProductData {
   price: number;
   brandId: number;
   categoryId: number;
-  images: string[];
+  image: string[];
   createdAt?: string;
   updatedAt?: string;
 }
