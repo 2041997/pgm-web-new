@@ -117,8 +117,8 @@ export class UserService {
    * Refresh access token
    */
   static async refreshToken(refreshTokenData: RefreshTokenRequest): Promise<ApiResponse<TokenResponse>> {
-    const response = await userClient.post<TokenResponse>('/auth/refresh', refreshTokenData);
-    
+    const response = await userClient.post<TokenResponse>('/auth/refresh-token', refreshTokenData);
+     console.log("refresh response", response);
     if (response.success && response.data) {
       tokenManager.setTokens(response.data.accessToken, response.data.refreshToken);
     }
@@ -129,12 +129,15 @@ export class UserService {
   /**
    * Get current user profile
    */
-  static async getProfile(token?: string): Promise<ApiResponse<User>> {
+  static async getProfile(id: string | number, token?: string): Promise<ApiResponse<User>> {
     const config = {
-      ...(token && { headers: { Authorization: `Bearer ${token}` } }),
+      headers: {
+        accept: 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
     };
 
-    return userClient.get<User>('/auth/profile', config);
+    return userClient.get<User>(`/user/${id}`, config);
   }
 
   /**

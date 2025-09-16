@@ -274,9 +274,9 @@ export const userApi = {
     }
   },
 
-  async getProfile() {
+  async getProfile(id:string | number, token?: string) {
     try {
-      const response = await UserService.getProfile();
+      const response = await UserService.getProfile(id, token);
       return response;
     } catch (error) {
       console.error('Error fetching profile:', error);

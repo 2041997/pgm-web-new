@@ -30,6 +30,7 @@ import { refreshToken as refreshTokenService, getProfile } from '@/services/api'
 
 type AuthContextValue = {
   isAuthenticated: boolean
+  isLoading: boolean
   login: (token: string) => void
   logout: () => void
   userData: any
@@ -48,70 +49,155 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userData, setUserData] = useState<any>(null)
   const [isAssociateData, setisAssociateData] = useState<any>(null)
   const [isAuthenticatedToken, setIsAuthenticatedToken] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(true) // Add loading state
 
   useEffect(() => {
     // run only on client
     const initializeAuth = async () => {
-      const token = getFromLocalStorage('token')
-      const tempUserData = getFromLocalStorage('user') || null
-      let checkUserAssociateData = null
+      try {
+        const token = getFromLocalStorage('token') || getFromLocalStorage('accessToken')
+        const refreshTokenValue = getFromLocalStorage('refreshToken')
+        const tempUserData = getFromLocalStorage('user') || null
+        const isAuthenticationFlag = getFromLocalStorage('isAuthentication')
 
-      if (token) {
-        try {
-          // Try to verify token by fetching profile
-          const profileResult = await getProfile()
-          if (profileResult?.success && profileResult.data) {
-            setIsAuthenticatedToken(token)
-            setIsAuthenticated(true)
-            setUserData(profileResult.data || tempUserData)
-            // No associate fetch available here; keep any existing associateUser stored
-            const existingAssoc = getFromLocalStorage('associateUser') || null
-            setisAssociateData(existingAssoc)
-          } else {
-            // Attempt refresh using the available refreshTokenService
-            const refreshResult = await refreshTokenService({ refreshToken: getFromLocalStorage('refreshToken') })
-            if (refreshResult?.success && refreshResult.data) {
-              const newToken = refreshResult.data.accessToken ?? null
-              if (newToken) {
-                setToLocalStorage('token', newToken)
-                setIsAuthenticatedToken(newToken)
-                // try to fetch profile again
-                const newProfile = await getProfile()
-                setUserData(newProfile?.data ?? tempUserData)
-                setIsAuthenticated(true)
-              } else {
-                logout()
-              }
+        if (token && (isAuthenticationFlag === 'true' || isAuthenticationFlag === true)) {
+          try {
+            // Try to verify token by fetching profile
+            const profileResult = await getProfile(tempUserData.id, token)
+            if (profileResult?.success && profileResult.data) {
+              setIsAuthenticatedToken(token)
+              setIsAuthenticated(true)
+              setUserData(profileResult.data || tempUserData)
+              // Keep any existing associateUser stored
+              const existingAssoc = getFromLocalStorage('associateUser') || null
+              setisAssociateData(existingAssoc)
+              console.log('Auth restored successfully')
             } else {
-              logout()
+              // Attempt refresh using the available refreshTokenService
+              if (refreshTokenValue) {
+                console.log('Attempting token refresh')
+                const refreshResult = await refreshTokenService({ refreshToken: refreshTokenValue })
+                if (refreshResult?.success && refreshResult.data) {
+                  const newToken = refreshResult.data.accessToken ?? null
+                  if (newToken) {
+                    // Update both token formats for compatibility
+                    setToLocalStorage('token', newToken)
+                    setToLocalStorage('accessToken', newToken)
+                    setIsAuthenticatedToken(newToken)
+                    // try to fetch profile again
+                    const newProfile = await getProfile(newToken)
+                    setUserData(newProfile?.data ?? tempUserData)
+                    setIsAuthenticated(true)
+                    console.log('Token refreshed successfully')
+                  } else {
+                    console.log('Refresh failed - no new token')
+                    clearAuthData()
+                  }
+                } else {
+                  console.log('Refresh request failed')
+                  clearAuthData()
+                }
+              } else {
+                console.log('No refresh token available')
+                clearAuthData()
+              }
             }
+          } catch (err) {
+            console.error('Auth initialization error:', err)
+            clearAuthData()
           }
-        } catch (err) {
-          logout()
+        } else {
+          console.log('No valid token or auth flag found')
+          // Clear auth data but preserve other localStorage items
+          clearAuthData()
         }
+      } catch (err) {
+        console.error('Failed to initialize auth:', err)
+        clearAuthData()
+      } finally {
+        setIsLoading(false)
       }
     }
 
     initializeAuth()
+    
+    // Listen for storage changes to sync auth across tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'isAuthentication' || e.key === 'token' || e.key === 'accessToken') {
+        console.log('Storage change detected:', e.key, e.newValue)
+        
+        // If auth was removed in another tab, logout here
+        if (e.key === 'isAuthentication' && e.newValue !== 'true') {
+          console.log('Auth removed in another tab, clearing auth data')
+          clearAuthData()
+        }
+        
+        // If token was added in another tab, initialize auth
+        if ((e.key === 'token' || e.key === 'accessToken') && e.newValue && getFromLocalStorage('isAuthentication') === 'true') {
+          console.log('Token added in another tab, initializing auth')
+          initializeAuth()
+        }
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange)
+    }
+    
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorageChange)
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const login = (token: string) => {
+    console.log('Login called with token:', !!token)
     setIsAuthenticated(true)
-    setToLocalStorage('token', token)
     setIsAuthenticatedToken(token)
+    // Store in both formats for compatibility
+    setToLocalStorage('token', token)
+    setToLocalStorage('accessToken', token)
+    setToLocalStorage('isAuthentication', 'true')
   }
 
   const logout = () => {
+    console.log('User logout - clearing all data including cart')
     setIsAuthenticated(false)
-    removeFromLocalStorage('token')
-    removeFromLocalStorage('cartItems')
+    setUserData(null)
+    setisAssociateData(null)
     setIsAuthenticatedToken(null)
-    // router.push('/') // optionally navigate after logout
+    
+    // Clear all data including cart when user intentionally logs out
+    removeFromLocalStorage('token')
+    removeFromLocalStorage('accessToken')
+    removeFromLocalStorage('refreshToken')
+    removeFromLocalStorage('user')
+    removeFromLocalStorage('associateUser')
+    removeFromLocalStorage('isAuthentication')
+    removeFromLocalStorage('cartItems')
+  }
+
+  const clearAuthData = () => {
+    console.log('Clearing auth data only')
+    setIsAuthenticated(false)
+    setUserData(null)
+    setisAssociateData(null)
+    setIsAuthenticatedToken(null)
+    
+    // Clear only auth-related storage, preserve everything else
+    removeFromLocalStorage('token')
+    removeFromLocalStorage('accessToken')
+    removeFromLocalStorage('refreshToken')
+    removeFromLocalStorage('user')
+    removeFromLocalStorage('associateUser')
+    removeFromLocalStorage('isAuthentication')
   }
 
   const value: AuthContextValue = {
     isAuthenticated,
+    isLoading,
     login,
     logout,
     userData,

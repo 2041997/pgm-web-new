@@ -9,8 +9,13 @@ import {
   XMarkIcon as XIcon,
   PhoneIcon,
   HeartIcon,
+  ChevronDownIcon,
+  Cog6ToothIcon,
+  DocumentTextIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline'
 import { cartApi } from '@/services'
+import { useAuth } from '@/context/useAuth'
 import logo from '../../public/logo.png'
 import Image from 'next/image'
 
@@ -22,6 +27,12 @@ type SidebarProps = {
 
 function SidebarContent({ searchQuery, setSearchQuery, onClose }: SidebarProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const { isAuthenticated, userData, logout } = useAuth()
+
+  const handleLogout = () => {
+    logout()
+    onClose()
+  }
 
   const items: { title: string; children?: { label: string; href: string }[] }[] = [
     { title: 'Home' },
@@ -115,12 +126,49 @@ function SidebarContent({ searchQuery, setSearchQuery, onClose }: SidebarProps) 
             <div className="font-medium text-gray-800">Our location</div>
           </div>
         </div>
-        <div className="flex items-center gap-3 mb-3">
-          <Link href="/account" className="text-sm text-gray-700 flex items-center gap-2">
-            <UserIcon className="h-5 w-5 text-emerald-500" />
-            <span>Log In / Sign Up</span>
-          </Link>
-        </div>
+        
+        {isAuthenticated ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 mb-3">
+              <Link href="/account/profile" onClick={onClose} className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                <UserIcon className="h-5 w-5 text-emerald-500" />
+              </Link>
+              <div>
+                <div className="font-medium text-gray-800">{userData?.name || 'User'}</div>
+                <div className="text-xs text-gray-600">{userData?.email || 'user@example.com'}</div>
+              </div>
+            </div>
+            <div className="space-y-2 hidden">
+              <Link href="/account/profile" onClick={onClose} className="flex items-center gap-2 text-sm text-gray-700 hover:text-emerald-600">
+                <UserIcon className="h-4 w-4" />
+                Dashboard
+              </Link>
+              <Link href="/account/orders" onClick={onClose} className="flex items-center gap-2 text-sm text-gray-700 hover:text-emerald-600">
+                <DocumentTextIcon className="h-4 w-4" />
+                Orders
+              </Link>
+              <Link href="/account/settings" onClick={onClose} className="flex items-center gap-2 text-sm text-gray-700 hover:text-emerald-600">
+                <Cog6ToothIcon className="h-4 w-4" />
+                Settings
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 w-full text-left"
+              >
+                <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 mb-3">
+            <Link href="/account/login" onClick={onClose} className="text-sm text-gray-700 flex items-center gap-2">
+              <UserIcon className="h-5 w-5 text-emerald-500" />
+              <span>Log In / Sign Up</span>
+            </Link>
+          </div>
+        )}
+        
         <div className="flex items-center gap-3">
           <PhoneIcon className="h-5 w-5 text-emerald-500" />
           <div className="text-sm text-gray-700">(+91) - 91205  - 63563</div>
@@ -151,12 +199,111 @@ function SidebarContent({ searchQuery, setSearchQuery, onClose }: SidebarProps) 
   )
 }
 
+function UserDropdown() {
+  const [isOpen, setIsOpen] = useState(false)
+  const { userData, logout } = useAuth()
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const handleLogout = () => {
+    logout()
+    setIsOpen(false)
+  }
+
+  return (
+    <div className="relative xl:block hidden" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1 text-gray-700 hover:text-emerald-600 transition-colors"
+      >
+        <UserIcon className="h-6 w-6" />
+        <ChevronDownIcon className="h-4 w-4" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg ">
+          <div className="p-4 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                <UserIcon className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <div className="font-medium text-gray-900">{userData?.name || 'User'}</div>
+                <div className="text-sm text-gray-600">{userData?.email || 'user@example.com'}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-2">
+            <Link
+              href="/account/profile"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+            >
+              <UserIcon className="h-5 w-5" />
+              Dashboard
+            </Link>
+            
+            <Link
+              href="/account/profile"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+            >
+              <UserIcon className="h-5 w-5" />
+              Profile
+            </Link>
+            
+            <Link
+              href="/account/orders"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+            >
+              <DocumentTextIcon className="h-5 w-5" />
+              Orders
+            </Link>
+            
+            <Link
+              href="/account/settings"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+            >
+              <Cog6ToothIcon className="h-5 w-5" />
+              Settings
+            </Link>
+            
+            <div className="border-t border-gray-100 mt-2 pt-2">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors w-full text-left"
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5" />
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Header() {
   const [cartCount, setCartCount] = useState<number>(0)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showFullHeader, setShowFullHeader] = useState(true)
   const lastShowRef = useRef<boolean>(true)
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     ;(async () => {
@@ -237,13 +384,16 @@ export default function Header() {
   return (
     <div className="bg-white sticky top-0 z-50 border-b border-gray-100">
       {/* Mobile promo banner (mobile only) */}
+       {!isAuthenticated && (
       <div className={`transition-all duration-300 ${showFullHeader ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-3 pointer-events-none'} bg-emerald-500 text-white text-center text-sm py-2 md:hidden`}>
         Grand opening, up to 15% off all items. Only 3 days left
       </div>
+        )}
 
       {/* Desktop transition wrapper: contains thin info + main header; collapses on desktop leaving secondary nav visible */}
-      <div className={`overflow-hidden transition-[max-height,opacity,transform]  duration-300 ease-in-out md:block ${showFullHeader ? 'max-h-[400px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-3 pointer-events-none'}`}>
+      <div className={` transition-[max-height,opacity,transform]  duration-300 ease-in-out md:block ${showFullHeader ? 'max-h-[400px] opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-3 pointer-events-none'}`}>
         {/* Top thin info bar (desktop) */}
+        {!isAuthenticated && (
         <div className="hidden md:block px-6 bg-gray-50">
           <div className="container mx-auto px-4 py-2 flex items-center justify-between text-sm text-gray-600">
             <div className="flex items-center gap-6">
@@ -254,10 +404,13 @@ export default function Header() {
               <div className='text-sm text-emerald-500'>Free shipping on orders over $100</div>
             </div>
             <div className="flex items-center gap-4">
-              <Link href="/account/login" className="text-gray-700">LOGIN / REGISTER</Link>
+              {!isAuthenticated && (
+                <Link href="/account/login" className="text-gray-700">LOGIN / REGISTER</Link>
+              )}
             </div>
           </div>
         </div>
+        )}
 
         {/* Main header */}
         <div className="container mx-auto px-8">
@@ -332,9 +485,13 @@ export default function Header() {
                 )}
               </Link>
 
-              <Link href="/account" className="text-gray-700">
-                <UserIcon className="h-6 w-6" />
-              </Link>
+              {isAuthenticated ? (
+                <UserDropdown />
+              ) : (
+                <Link href="/account/login" className="text-gray-700">
+                  <UserIcon className="h-6 w-6" />
+                </Link>
+              )}
             </div>
           </div>
         </div>

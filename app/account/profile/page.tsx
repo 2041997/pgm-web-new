@@ -1,9 +1,12 @@
+"use client"
 import React from 'react'
+import DashboardLayout from '@/components/dashboard/DashboardLayout'
+import ProfileSection from '@/components/dashboard/ProfileSection'
 
-const page = () => {
+export default function ProfilePage() {
   return (
-    <div>page</div>
+    <DashboardLayout title="Profile">
+      <ProfileSection />
+    </DashboardLayout>
   )
 }
-
-export default page

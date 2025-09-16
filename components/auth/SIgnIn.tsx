@@ -56,15 +56,26 @@ export default function SignIn() {
       const token = d.accessToken ?? d.token ?? ''
       const refreshToken = d.refreshToken ?? undefined
 
-      // Persist via auth context
-      login(token)
-
       // Try to obtain user profile (either from resp.data.user or from profile endpoint)
       let user = d.user ?? null
       if (!user) {
-        const profileRes = await getProfile()
+        const profileRes = await getProfile(user.id, token)
         user = profileRes?.data ?? null
       }
+
+      // Save tokens and user to localStorage first
+      if (typeof window !== 'undefined') {
+        if (token) {
+          localStorage.setItem('token', token)
+          localStorage.setItem('accessToken', token)
+        }
+        if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
+        if (user) localStorage.setItem('user', JSON.stringify(user))
+        localStorage.setItem('isAuthentication', 'true')
+      }
+
+      // Persist via auth context (this will trigger the login function)
+      login(token)
 
       if (user) {
         setUserData(user)
@@ -76,14 +87,6 @@ export default function SignIn() {
         } catch (cartErr) {
           console.error('Cart fetch failed', cartErr)
         }
-      }
-
-      // Save tokens and user to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('isAuthentication', 'true')
-        if (token) localStorage.setItem('token', token)
-        if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
-        if (user) localStorage.setItem('user', JSON.stringify(user))
       }
 
       // Handle associate/admin data
